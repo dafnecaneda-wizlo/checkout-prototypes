@@ -18,6 +18,7 @@ import { SectionCard } from "@/components/checkout/SectionCard";
 import { FieldRenderer } from "@/components/checkout/FieldRenderer";
 import { PrefilledShipping } from "@/components/checkout/PrefilledShipping";
 import { AffirmMessaging } from "@/components/checkout/AffirmMessaging";
+import { Gr4vyBrandedFrame } from "@/components/checkout/Gr4vyBrandedFrame";
 import { PlanTypeTabs, type PlanType } from "@/components/checkout/PlanTypeTabs";
 import {
   PlanPicker,
@@ -191,16 +192,18 @@ export default function OnePageCheckout() {
 
             <SectionCard title="Payment Information">
               <AffirmMessaging totalCents={totalCents} />
-              {visibleFields.payment.map((field) => (
-                <FieldRenderer
-                  key={field.id}
-                  field={field}
-                  value={values[field.id]}
-                  error={errors[field.id]}
-                  variant={variant}
-                  onChange={(val) => setField(field.id, val)}
-                />
-              ))}
+              <Gr4vyBrandedFrame>
+                {visibleFields.payment.map((field) => (
+                  <FieldRenderer
+                    key={field.id}
+                    field={field}
+                    value={values[field.id]}
+                    error={errors[field.id]}
+                    variant={variant}
+                    onChange={(val) => setField(field.id, val)}
+                  />
+                ))}
+              </Gr4vyBrandedFrame>
             </SectionCard>
 
             <Button type="submit" size="lg" className="w-full" disabled={submitting}>

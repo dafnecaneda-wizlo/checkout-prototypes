@@ -21,6 +21,7 @@ import { AccordionSection } from "@/components/checkout/AccordionSection";
 import { FieldRenderer } from "@/components/checkout/FieldRenderer";
 import { PrefilledShipping } from "@/components/checkout/PrefilledShipping";
 import { AffirmMessaging } from "@/components/checkout/AffirmMessaging";
+import { Gr4vyBrandedFrame } from "@/components/checkout/Gr4vyBrandedFrame";
 import { PlanTypeTabs, type PlanType } from "@/components/checkout/PlanTypeTabs";
 import {
   PlanPicker,
@@ -299,16 +300,18 @@ export default function HybridCheckout() {
               onEdit={() => editStep("payment")}
             >
               <AffirmMessaging totalCents={totalCents} />
-              {visibleStepFields("payment").map((field) => (
-                <FieldRenderer
-                  key={field.id}
-                  field={field}
-                  value={values[field.id]}
-                  error={errors[field.id]}
-                  variant={variant}
-                  onChange={(val) => setField(field.id, val)}
-                />
-              ))}
+              <Gr4vyBrandedFrame>
+                {visibleStepFields("payment").map((field) => (
+                  <FieldRenderer
+                    key={field.id}
+                    field={field}
+                    value={values[field.id]}
+                    error={errors[field.id]}
+                    variant={variant}
+                    onChange={(val) => setField(field.id, val)}
+                  />
+                ))}
+              </Gr4vyBrandedFrame>
               <Button onClick={() => advance("payment")} size="lg">
                 Review order
               </Button>
