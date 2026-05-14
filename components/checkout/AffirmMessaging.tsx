@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { formatMoney } from "@/lib/utils";
+import { AffirmInfoModal } from "./AffirmInfoModal";
 
 /**
  * Affirm BNPL promotional messaging at four placements, mirroring what
@@ -20,16 +24,41 @@ export function AffirmMessaging({
   totalCents,
   placement = "payment",
 }: AffirmMessagingProps) {
-  if (placement === "banner") return <AffirmBanner totalCents={totalCents} />;
-  if (placement === "product") return <AffirmProduct totalCents={totalCents} />;
-  if (placement === "summary") return <AffirmSummary totalCents={totalCents} />;
-  return <AffirmPayment totalCents={totalCents} />;
+  const [open, setOpen] = useState(false);
+  const openModal = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setOpen(true);
+  };
+
+  let body: React.ReactNode;
+  if (placement === "banner") body = <AffirmBanner totalCents={totalCents} onLearnMore={openModal} />;
+  else if (placement === "product") body = <AffirmProduct totalCents={totalCents} onLearnMore={openModal} />;
+  else if (placement === "summary") body = <AffirmSummary totalCents={totalCents} onLearnMore={openModal} />;
+  else body = <AffirmPayment totalCents={totalCents} onLearnMore={openModal} />;
+
+  return (
+    <>
+      {body}
+      <AffirmInfoModal
+        open={open}
+        totalCents={totalCents}
+        onClose={() => setOpen(false)}
+      />
+    </>
+  );
 }
 
-function AffirmPayment({ totalCents }: { totalCents: number }) {
+function AffirmPayment({
+  totalCents,
+  onLearnMore,
+}: {
+  totalCents: number;
+  onLearnMore: (e: React.MouseEvent) => void;
+}) {
   const installmentCents = Math.round(totalCents / 4);
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-stone-100 bg-stone-50/60 p-3.5">
+    <div className="flex items-start gap-3 rounded-xl glass-dim border border-white/40 p-3.5">
       <AffirmBadge />
       <div className="text-sm text-slate-700 leading-snug">
         <p>
@@ -44,7 +73,8 @@ function AffirmPayment({ totalCents }: { totalCents: number }) {
           No impact to credit score. Subject to eligibility.{" "}
           <button
             type="button"
-            className="text-brand font-medium hover:underline"
+            onClick={onLearnMore}
+            className="text-brand-ink font-medium hover:underline"
           >
             Learn more
           </button>
@@ -58,7 +88,13 @@ function AffirmPayment({ totalCents }: { totalCents: number }) {
  * Inline placement for product (bundle) cards. Short copy, one line,
  * mirrors Stripe's compact element under a price.
  */
-function AffirmProduct({ totalCents }: { totalCents: number }) {
+function AffirmProduct({
+  totalCents,
+  onLearnMore,
+}: {
+  totalCents: number;
+  onLearnMore: (e: React.MouseEvent) => void;
+}) {
   const monthlyCents = Math.round(totalCents / 12);
   return (
     <p className="text-xs text-slate-600 mt-1">
@@ -69,8 +105,8 @@ function AffirmProduct({ totalCents }: { totalCents: number }) {
       with{" "}
       <button
         type="button"
-        className="text-brand font-medium hover:underline"
-        onClick={(e) => e.stopPropagation()}
+        onClick={onLearnMore}
+        className="text-brand-ink font-medium hover:underline"
       >
         Affirm
       </button>
@@ -80,18 +116,31 @@ function AffirmProduct({ totalCents }: { totalCents: number }) {
 }
 
 /** Order-summary placement. Sits near "Due Today". */
-function AffirmSummary({ totalCents }: { totalCents: number }) {
+function AffirmSummary({
+  totalCents,
+  onLearnMore,
+}: {
+  totalCents: number;
+  onLearnMore: (e: React.MouseEvent) => void;
+}) {
   const installmentCents = Math.round(totalCents / 4);
   return (
-    <div className="rounded-xl glass-dim border border-white/40 p-3 mt-3">
+    <button
+      type="button"
+      onClick={onLearnMore}
+      className="block w-full text-left rounded-xl glass-dim border border-white/40 p-3 mt-3 hover:border-brand/40 transition-colors"
+    >
       <p className="text-xs text-slate-700 leading-snug">
         <AffirmBadge inline /> Or pay in{" "}
         <strong className="text-slate-900">
           4 of {formatMoney(installmentCents, "USD")}
         </strong>{" "}
-        with Affirm. No extra cost.
+        with Affirm.{" "}
+        <span className="text-brand-ink font-medium underline">
+          See plans →
+        </span>
       </p>
-    </div>
+    </button>
   );
 }
 
@@ -100,7 +149,13 @@ function AffirmSummary({ totalCents }: { totalCents: number }) {
  * called out on Apr 29: a promotional banner that is not tied to any
  * product page ("you can get 18 months…").
  */
-function AffirmBanner({ totalCents }: { totalCents: number }) {
+function AffirmBanner({
+  totalCents,
+  onLearnMore,
+}: {
+  totalCents: number;
+  onLearnMore: (e: React.MouseEvent) => void;
+}) {
   const monthlyCents = Math.round(totalCents / 18);
   return (
     <div className="glass rounded-2xl px-5 py-4 shadow-card">
@@ -123,6 +178,7 @@ function AffirmBanner({ totalCents }: { totalCents: number }) {
         </p>
         <button
           type="button"
+          onClick={onLearnMore}
           className="self-start sm:self-auto text-xs font-medium text-brand-ink hover:underline whitespace-nowrap"
         >
           Learn more →

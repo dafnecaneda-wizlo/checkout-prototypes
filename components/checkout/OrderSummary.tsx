@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Cart } from "@/lib/schema/cart";
 import { formatMoney } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,8 @@ interface OrderSummaryProps {
    */
   mobileDefaultOpen?: boolean;
   disabledReason?: string | null;
+  /** Notifies the page when an effective total (post-discount) changes. */
+  onEffectiveTotalChange?: (totalCents: number) => void;
 }
 
 export function OrderSummary({
@@ -25,16 +27,52 @@ export function OrderSummary({
   sticky = true,
   mobileDefaultOpen = true,
   disabledReason,
+  onEffectiveTotalChange,
 }: OrderSummaryProps) {
   const [openMobile, setOpenMobile] = useState(mobileDefaultOpen);
   const [code, setCode] = useState("");
+  const [codeStatus, setCodeStatus] = useState<
+    null | { kind: "ok"; pct: number; label: string } | { kind: "err"; msg: string }
+  >(null);
 
-  const savingsCents =
+  const applyCode = () => {
+    const c = code.trim().toUpperCase();
+    if (!c) return;
+    // Static demo codes — real validation lives server-side.
+    const KNOWN: Record<string, { pct: number; label: string }> = {
+      WIZLO10: { pct: 10, label: "10% off applied" },
+      LAUNCH20: { pct: 20, label: "Launch promo 20% off" },
+      AFFIRM5: { pct: 5, label: "Affirm partner 5% off" },
+    };
+    const match = KNOWN[c];
+    if (match) {
+      setCodeStatus({ kind: "ok", ...match });
+    } else {
+      setCodeStatus({ kind: "err", msg: `'${c}' is not a valid code` });
+    }
+  };
+
+  const clearCode = () => {
+    setCode("");
+    setCodeStatus(null);
+  };
+
+  const baseSavingsCents =
     offer?.savingsCents ??
     cart.lines.reduce(
       (sum, l) => sum + Math.max(0, (l.originalCents ?? 0) - l.unitCents),
       0,
     );
+  const codeDiscountCents =
+    codeStatus?.kind === "ok"
+      ? Math.round((cart.totalCents * codeStatus.pct) / 100)
+      : 0;
+  const savingsCents = baseSavingsCents + codeDiscountCents;
+  const effectiveTotalCents = Math.max(0, cart.totalCents - codeDiscountCents);
+
+  useEffect(() => {
+    onEffectiveTotalChange?.(effectiveTotalCents);
+  }, [effectiveTotalCents, onEffectiveTotalChange]);
 
   const dueLabel = offer?.type === "subscription" ? "Due Today" : "Due Today";
 
@@ -54,7 +92,7 @@ export function OrderSummary({
         <span>Order Summary</span>
         <span className="flex items-center gap-2">
           <span className="font-semibold">
-            {formatMoney(cart.totalCents, cart.currency)}
+            {formatMoney(effectiveTotalCents, cart.currency)}
           </span>
           <span
             className={cn("transition-transform", openMobile && "rotate-180")}
@@ -150,7 +188,7 @@ export function OrderSummary({
             {dueLabel}
           </span>
           <span className="text-3xl font-display font-semibold tracking-tight text-slate-900">
-            {formatMoney(cart.totalCents, cart.currency)}
+            {formatMoney(effectiveTotalCents, cart.currency)}
           </span>
         </div>
 
@@ -160,26 +198,54 @@ export function OrderSummary({
           </p>
         )}
 
-        <AffirmMessaging totalCents={cart.totalCents} placement="summary" />
+        <AffirmMessaging totalCents={effectiveTotalCents} placement="summary" />
 
         <form
           className="flex gap-2 mt-4"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(e) => {
+            e.preventDefault();
+            applyCode();
+          }}
         >
           <input
             type="text"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Apply Code"
-            className="flex-1 min-w-0 h-10 px-3 rounded-lg glass-input border border-white/50 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+            onChange={(e) => {
+              setCode(e.target.value);
+              if (codeStatus) setCodeStatus(null);
+            }}
+            placeholder="Promo code"
+            aria-label="Promo code"
+            className="flex-1 min-w-0 h-10 px-3 rounded-lg glass-input border border-white/50 text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand uppercase"
           />
           <button
             type="submit"
-            className="h-10 px-3 rounded-lg glass border border-white/60 text-sm font-medium text-slate-700 hover:text-brand-ink"
+            disabled={!code.trim()}
+            className="h-10 px-4 rounded-lg glass border border-white/60 text-sm font-medium text-slate-700 hover:text-brand-ink disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Apply
           </button>
         </form>
+        {codeStatus?.kind === "ok" && (
+          <div className="mt-2 flex items-center justify-between rounded-lg bg-savings-muted/70 border border-savings/30 px-3 py-2 text-xs">
+            <span className="text-savings-ink font-medium">
+              ✓ {codeStatus.label}
+            </span>
+            <button
+              type="button"
+              onClick={clearCode}
+              className="text-savings-ink/70 hover:text-savings-ink underline"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+        {codeStatus?.kind === "err" && (
+          <p className="mt-2 text-xs text-rose-600">
+            {codeStatus.msg}. Try <code className="font-mono">WIZLO10</code> or{" "}
+            <code className="font-mono">LAUNCH20</code>.
+          </p>
+        )}
 
         <div className="mt-4 rounded-xl glass-dim p-3 border border-white/40">
           <p className="text-xs font-semibold text-slate-800">
