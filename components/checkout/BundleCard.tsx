@@ -81,7 +81,7 @@ export function BundleCard({ bundle, selected, onSelect }: BundleCardProps) {
       </header>
 
       {bundle.items.length === 1 ? (
-        <div className="grid grid-cols-[8rem_minmax(0,1fr)] sm:grid-cols-[13rem_minmax(0,1fr)] gap-3 sm:gap-4 items-center mt-3">
+        <div className="flex flex-col sm:grid sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-center gap-3 sm:gap-4 mt-3">
           <div className="rounded-2xl border border-stone-100 bg-stone-50/40 p-4 text-center">
             <VialIcon image={bundle.items[0].image} large />
             <p className="text-sm font-medium text-slate-900 mt-2">
@@ -89,7 +89,7 @@ export function BundleCard({ bundle, selected, onSelect }: BundleCardProps) {
             </p>
           </div>
           <div>
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1">
               <span className="text-3xl font-display font-semibold text-slate-900 tracking-tight">
                 {formatMoney(bundle.priceCents, "USD")}
               </span>

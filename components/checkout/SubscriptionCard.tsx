@@ -88,7 +88,7 @@ export function SubscriptionCard({ plan, selected, onSelect }: SubscriptionCardP
         )}
       </header>
 
-      <div className="grid grid-cols-[8rem_minmax(0,1fr)] sm:grid-cols-[13rem_minmax(0,1fr)] gap-3 sm:gap-4 items-center mt-3">
+      <div className="flex flex-col sm:grid sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-center gap-3 sm:gap-4 mt-3">
         <div className="rounded-2xl border border-stone-100 bg-stone-50/40 p-4 text-center">
           <div className="mx-auto h-32 w-32 rounded-lg overflow-hidden bg-white border border-stone-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
