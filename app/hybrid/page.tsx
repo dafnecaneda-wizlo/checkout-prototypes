@@ -15,13 +15,20 @@ import { placeMockOrder } from "@/lib/checkout-client";
 import { track } from "@/lib/analytics/client";
 import { CheckoutHeader } from "@/components/checkout/CheckoutHeader";
 import { GuestCheckoutBanner } from "@/components/checkout/GuestCheckoutBanner";
-import { ExpressPay } from "@/components/checkout/ExpressPay";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { AccordionSection } from "@/components/checkout/AccordionSection";
 import { FieldRenderer } from "@/components/checkout/FieldRenderer";
 import { PrefilledShipping } from "@/components/checkout/PrefilledShipping";
 import { AffirmMessaging } from "@/components/checkout/AffirmMessaging";
 import { Gr4vyBrandedFrame } from "@/components/checkout/Gr4vyBrandedFrame";
+import { Gr4vyEmbed } from "@/components/checkout/Gr4vyEmbed";
+
+const GR4VY_CARD_FIELD_IDS = new Set([
+  "paymentMethod",
+  "cardNumber",
+  "cardExpiry",
+  "cardCvc",
+]);
 import { PlanTypeTabs, type PlanType } from "@/components/checkout/PlanTypeTabs";
 import {
   PlanPicker,
@@ -190,10 +197,6 @@ export default function HybridCheckout() {
           </p>
         </div>
 
-        <div className="mb-6">
-          <AffirmMessaging totalCents={totalCents} placement="banner" />
-        </div>
-
         <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-10">
           <div className="lg:hidden">
             <OrderSummary cart={summaryCart} offer={offer} sticky={false} />
@@ -211,12 +214,6 @@ export default function HybridCheckout() {
             />
 
             <GuestCheckoutBanner />
-
-            {openStep === "contact" && (
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
-                <ExpressPay onPay={() => setPlaced("rcpt_express_mock")} />
-              </div>
-            )}
 
             <AccordionSection
               title="Contact"
@@ -301,7 +298,21 @@ export default function HybridCheckout() {
             >
               <AffirmMessaging totalCents={totalCents} />
               <Gr4vyBrandedFrame>
-                {visibleStepFields("payment").map((field) => (
+                <Gr4vyEmbed
+                  amountCents={totalCents}
+                  onComplete={(tx) => {
+                    track({
+                      kind: "order_placed",
+                      variant,
+                      totalCents,
+                    });
+                    setPlaced(tx?.id ?? `rcpt_${Date.now()}`);
+                  }}
+                />
+              </Gr4vyBrandedFrame>
+              {visibleStepFields("payment")
+                .filter((f) => !GR4VY_CARD_FIELD_IDS.has(f.id))
+                .map((field) => (
                   <FieldRenderer
                     key={field.id}
                     field={field}
@@ -311,10 +322,6 @@ export default function HybridCheckout() {
                     onChange={(val) => setField(field.id, val)}
                   />
                 ))}
-              </Gr4vyBrandedFrame>
-              <Button onClick={() => advance("payment")} size="lg">
-                Review order
-              </Button>
             </AccordionSection>
 
             {completed.has("payment") && (

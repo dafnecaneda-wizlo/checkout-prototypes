@@ -12,13 +12,20 @@ import { placeMockOrder } from "@/lib/checkout-client";
 import { track } from "@/lib/analytics/client";
 import { CheckoutHeader } from "@/components/checkout/CheckoutHeader";
 import { GuestCheckoutBanner } from "@/components/checkout/GuestCheckoutBanner";
-import { ExpressPay } from "@/components/checkout/ExpressPay";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { SectionCard } from "@/components/checkout/SectionCard";
 import { FieldRenderer } from "@/components/checkout/FieldRenderer";
 import { PrefilledShipping } from "@/components/checkout/PrefilledShipping";
 import { AffirmMessaging } from "@/components/checkout/AffirmMessaging";
 import { Gr4vyBrandedFrame } from "@/components/checkout/Gr4vyBrandedFrame";
+import { Gr4vyEmbed } from "@/components/checkout/Gr4vyEmbed";
+
+const GR4VY_CARD_FIELD_IDS = new Set([
+  "paymentMethod",
+  "cardNumber",
+  "cardExpiry",
+  "cardCvc",
+]);
 import { PlanTypeTabs, type PlanType } from "@/components/checkout/PlanTypeTabs";
 import {
   PlanPicker,
@@ -58,6 +65,12 @@ export default function OnePageCheckout() {
     }),
     [values],
   );
+
+  const formValid = useMemo(() => {
+    const next = validateAll(values);
+    for (const id of GR4VY_CARD_FIELD_IDS) delete next[id];
+    return Object.keys(next).length === 0;
+  }, [values]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,10 +124,6 @@ export default function OnePageCheckout() {
           </p>
         </div>
 
-        <div className="mb-6">
-          <AffirmMessaging totalCents={totalCents} placement="banner" />
-        </div>
-
         <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-10">
           <div className="lg:hidden">
             <OrderSummary cart={summaryCart} offer={offer} sticky={false} />
@@ -134,10 +143,6 @@ export default function OnePageCheckout() {
             />
 
             <GuestCheckoutBanner />
-
-            <SectionCard title="Express checkout">
-              <ExpressPay onPay={() => setPlaced("rcpt_express_mock")} />
-            </SectionCard>
 
             <SectionCard
               title="Contact"
@@ -193,7 +198,22 @@ export default function OnePageCheckout() {
             <SectionCard title="Payment Information">
               <AffirmMessaging totalCents={totalCents} />
               <Gr4vyBrandedFrame>
-                {visibleFields.payment.map((field) => (
+                <Gr4vyEmbed
+                  amountCents={totalCents}
+                  enabled={formValid}
+                  onComplete={(tx) => {
+                    track({
+                      kind: "order_placed",
+                      variant,
+                      totalCents,
+                    });
+                    setPlaced(tx?.id ?? `rcpt_${Date.now()}`);
+                  }}
+                />
+              </Gr4vyBrandedFrame>
+              {visibleFields.payment
+                .filter((f) => !GR4VY_CARD_FIELD_IDS.has(f.id))
+                .map((field) => (
                   <FieldRenderer
                     key={field.id}
                     field={field}
@@ -203,12 +223,7 @@ export default function OnePageCheckout() {
                     onChange={(val) => setField(field.id, val)}
                   />
                 ))}
-              </Gr4vyBrandedFrame>
             </SectionCard>
-
-            <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-              {submitting ? "Placing order…" : "Place order"}
-            </Button>
 
             <p className="text-xs text-center text-slate-500">
               By placing your order you agree to Wizlo&apos;s terms and privacy policy.
