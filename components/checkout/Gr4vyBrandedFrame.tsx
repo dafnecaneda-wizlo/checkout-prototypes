@@ -32,14 +32,14 @@ export function Gr4vyBrandedFrame({
             aria-hidden
             className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-slate-900 text-[11px] font-semibold text-white"
           >
-            g4
+            wl
           </span>
           <div className="leading-tight">
             <p className="text-sm font-medium text-slate-900">
               Secure checkout
             </p>
             <p className="text-[11px] text-slate-500">
-              Card details handled by Gr4vy
+              Card details handled by Wiz Lopee
             </p>
           </div>
         </div>
@@ -61,7 +61,7 @@ export function Gr4vyBrandedFrame({
       </div>
 
       <footer className="flex items-center justify-between border-t border-slate-200 px-4 py-2 text-[11px] text-slate-500">
-        <span>Powered by Gr4vy</span>
+        <span>Powered by Wiz Lopee</span>
         <span className="flex items-center gap-2" aria-hidden>
           <CardScheme label="VISA" />
           <CardScheme label="MC" />

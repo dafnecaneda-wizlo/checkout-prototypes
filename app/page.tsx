@@ -17,6 +17,14 @@ const VARIANTS = [
       "Stacked sections with a preview of what was entered. Click any block to edit in place.",
     when: "Default recommendation · Dafne's pick · best for mid-flow edits.",
   },
+  {
+    href: "/one-page-sticky",
+    code: "A+",
+    title: "Variant A with sticky mobile summary (mockup)",
+    pitch:
+      "Same as variant A, but the order summary follows you on mobile as a compact pill at the top. Tap to expand the full breakdown.",
+    when: "Mockup for Dafne/Johnny to pick. Mobile only — desktop unchanged.",
+  },
 ];
 
 export default function Home() {

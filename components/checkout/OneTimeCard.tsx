@@ -23,13 +23,20 @@ interface OneTimeCardProps {
 
 export function OneTimeCard({ product, selected, onSelect }: OneTimeCardProps) {
   return (
-    <button
-      type="button"
+    <div
+      role="radio"
+      tabIndex={0}
+      aria-checked={selected}
       onClick={onSelect}
-      aria-pressed={selected}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        "glass w-full text-left rounded-2xl p-5 sm:p-6 transition-all shadow-card",
-        "hover:shadow-cardLift hover:-translate-y-0.5",
+        "glass w-full text-left rounded-2xl p-5 sm:p-6 transition-all shadow-card cursor-pointer",
+        "hover:shadow-cardLift hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand/40",
         selected && "ring-2 ring-brand/40 shadow-glow",
       )}
     >
@@ -60,7 +67,24 @@ export function OneTimeCard({ product, selected, onSelect }: OneTimeCardProps) {
         )}
       </header>
 
-      <div className="grid grid-cols-[1fr_8rem] gap-4 items-center mt-3">
+      <div className="grid grid-cols-[8rem_minmax(0,1fr)] sm:grid-cols-[13rem_minmax(0,1fr)] gap-3 sm:gap-4 items-center mt-3">
+        <div className="rounded-2xl border border-stone-100 bg-stone-50/40 p-4 text-center">
+          <div className="mx-auto h-32 w-32 rounded-lg overflow-hidden bg-white border border-stone-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={product.image}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+          <p className="text-sm font-medium text-slate-900 mt-2">
+            {product.productName}
+          </p>
+          <p className="text-[11px] text-savings-ink mt-1.5 bg-savings-muted rounded-full inline-block px-2 py-0.5 font-medium">
+            {product.dosage}
+          </p>
+        </div>
         <div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-display font-semibold text-slate-900 tracking-tight">
@@ -76,23 +100,6 @@ export function OneTimeCard({ product, selected, onSelect }: OneTimeCardProps) {
             placement="product"
           />
         </div>
-        <div className="rounded-2xl border border-stone-100 bg-stone-50/40 p-3 text-center">
-          <div className="mx-auto h-20 w-20 rounded-lg overflow-hidden bg-white border border-stone-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={product.image}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          </div>
-          <p className="text-sm font-medium text-slate-900 mt-1">
-            {product.productName}
-          </p>
-          <p className="text-[11px] text-savings-ink mt-1.5 bg-savings-muted rounded-full inline-block px-2 py-0.5 font-medium">
-            {product.dosage}
-          </p>
-        </div>
       </div>
 
       <ul className="mt-5 grid sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[12.5px] text-slate-600 pt-4 border-t border-stone-100">
@@ -103,7 +110,7 @@ export function OneTimeCard({ product, selected, onSelect }: OneTimeCardProps) {
           </li>
         ))}
       </ul>
-    </button>
+    </div>
   );
 }
 

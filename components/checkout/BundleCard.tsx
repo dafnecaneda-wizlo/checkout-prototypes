@@ -34,13 +34,20 @@ interface BundleCardProps {
  */
 export function BundleCard({ bundle, selected, onSelect }: BundleCardProps) {
   return (
-    <button
-      type="button"
+    <div
+      role="radio"
+      tabIndex={0}
+      aria-checked={selected}
       onClick={onSelect}
-      aria-pressed={selected}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
-        "glass w-full text-left rounded-2xl p-5 sm:p-6 transition-all shadow-card",
-        "hover:shadow-cardLift hover:-translate-y-0.5",
+        "glass w-full text-left rounded-2xl p-5 sm:p-6 transition-all shadow-card cursor-pointer",
+        "hover:shadow-cardLift hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-brand/40",
         selected && "ring-2 ring-brand/40 shadow-glow",
       )}
     >
@@ -74,7 +81,13 @@ export function BundleCard({ bundle, selected, onSelect }: BundleCardProps) {
       </header>
 
       {bundle.items.length === 1 ? (
-        <div className="grid grid-cols-[1fr_8rem] gap-4 items-center mt-3">
+        <div className="grid grid-cols-[8rem_minmax(0,1fr)] sm:grid-cols-[13rem_minmax(0,1fr)] gap-3 sm:gap-4 items-center mt-3">
+          <div className="rounded-2xl border border-stone-100 bg-stone-50/40 p-4 text-center">
+            <VialIcon image={bundle.items[0].image} large />
+            <p className="text-sm font-medium text-slate-900 mt-2">
+              {bundle.items[0].name}
+            </p>
+          </div>
           <div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-display font-semibold text-slate-900 tracking-tight">
@@ -89,12 +102,6 @@ export function BundleCard({ bundle, selected, onSelect }: BundleCardProps) {
             <AffirmMessaging totalCents={bundle.priceCents} placement="product" />
             <p className="text-[11px] text-savings-ink mt-2 bg-savings-muted rounded-full inline-block px-2 py-0.5 font-medium">
               {bundle.items[0].dosage}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-stone-100 bg-stone-50/40 p-3 text-center">
-            <VialIcon image={bundle.items[0].image} />
-            <p className="text-sm font-medium text-slate-900 mt-1">
-              {bundle.items[0].name}
             </p>
           </div>
         </div>
@@ -136,14 +143,19 @@ export function BundleCard({ bundle, selected, onSelect }: BundleCardProps) {
           <AffirmMessaging totalCents={bundle.priceCents} placement="product" />
         </>
       )}
-    </button>
+    </div>
   );
 }
 
-function VialIcon({ image }: { image?: string }) {
+function VialIcon({ image, large = false }: { image?: string; large?: boolean }) {
   if (image) {
     return (
-      <div className="mx-auto h-20 w-20 rounded-lg overflow-hidden bg-white border border-slate-200">
+      <div
+        className={cn(
+          "mx-auto rounded-lg overflow-hidden bg-white border border-slate-200",
+          large ? "h-32 w-32" : "h-20 w-20",
+        )}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={image}
@@ -155,7 +167,12 @@ function VialIcon({ image }: { image?: string }) {
     );
   }
   return (
-    <div className="mx-auto h-16 w-12 rounded-md bg-gradient-to-b from-slate-100 to-slate-200 relative">
+    <div
+      className={cn(
+        "mx-auto rounded-md bg-gradient-to-b from-slate-100 to-slate-200 relative",
+        large ? "h-28 w-20" : "h-16 w-12",
+      )}
+    >
       <span className="absolute top-1.5 left-1/2 -translate-x-1/2 h-2 w-5 rounded-sm bg-slate-400/70" />
       <span className="absolute top-3.5 left-1/2 -translate-x-1/2 h-3 w-6 rounded-sm bg-slate-500/80" />
       <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-7 w-8 rounded-md bg-white border border-slate-200" />
