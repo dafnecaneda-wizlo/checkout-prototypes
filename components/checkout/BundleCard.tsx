@@ -190,52 +190,48 @@ const NAD_IMG = "/products/nad.webp";
 
 export const SAMPLE_BUNDLES: BundleOption[] = [
   {
-    id: "sema-single",
-    name: "Semaglutide Starter",
+    id: "sema-1mo",
+    name: "1 Month Bundle",
     description:
-      "Single-dose introduction for new patients beginning their GLP-1 journey.",
-    items: [{ name: "Semaglutide", dosage: "1 mg / 0.5 mL", image: GLP1_IMG }],
+      "Try semaglutide for a month before deciding on a longer plan.",
+    items: [
+      { name: "Semaglutide", dosage: "1 mg / 0.5 mL · 4 weekly doses", image: GLP1_IMG },
+    ],
     priceCents: 14900,
-    savingsCents: 2000,
   },
   {
-    id: "starter",
-    name: "Weight Loss Starter Bundle",
+    id: "sema-3mo",
+    name: "3 Month Bundle",
     description:
-      "Everything you need to begin your GLP-1 journey. Semaglutide to start, tirzepatide to advance.",
+      "Three months of semaglutide. Most patients see results by week 8.",
     items: [
-      { name: "Semaglutide", dosage: "1 mg / 0.5 mL", image: GLP1_IMG },
-      { name: "Tirzepatide", dosage: "5 mg / 0.5 mL", image: NAD_IMG },
+      { name: "Semaglutide", dosage: "1 mg / 0.5 mL · 12 weekly doses", image: GLP1_IMG },
     ],
-    priceCents: 34900,
-    savingsCents: 4700,
+    priceCents: 39900,
+    savingsCents: 4800,
+  },
+  {
+    id: "sema-6mo",
+    name: "6 Month Bundle",
+    description:
+      "Six months of semaglutide. Maintains your results and locks in deeper savings.",
+    items: [
+      { name: "Semaglutide", dosage: "1 mg / 0.5 mL · 24 weekly doses", image: GLP1_IMG },
+    ],
+    priceCents: 74900,
+    savingsCents: 14500,
     tag: "BEST VALUE",
   },
   {
-    id: "tirz-progression",
-    name: "Tirzepatide Progression Bundle",
+    id: "sema-12mo",
+    name: "12 Month Bundle",
     description:
-      "A structured 3-month tirzepatide progression from starter to maintenance dose.",
+      "A full year of semaglutide at our lowest per-month price.",
     items: [
-      { name: "Tirzepatide", dosage: "5 mg / 0.5 mL", image: NAD_IMG },
-      { name: "Tirzepatide", dosage: "10 mg / 0.5 mL", image: GLP1_IMG },
-      { name: "Tirzepatide", dosage: "15 mg / 0.5 mL", image: NAD_IMG },
+      { name: "Semaglutide", dosage: "1 mg / 0.5 mL · 48 weekly doses", image: GLP1_IMG },
     ],
-    priceCents: 64900,
-    savingsCents: 9500,
-  },
-  {
-    id: "sema-maintenance",
-    name: "Semaglutide Maintenance Bundle",
-    description:
-      "Three months of semaglutide at a steady maintenance dose. Best for established patients.",
-    items: [
-      { name: "Semaglutide", dosage: "1 mg / 0.5 mL", image: GLP1_IMG },
-      { name: "Semaglutide", dosage: "1 mg / 0.5 mL", image: GLP1_IMG },
-      { name: "Semaglutide", dosage: "1 mg / 0.5 mL", image: GLP1_IMG },
-    ],
-    priceCents: 39900,
-    savingsCents: 6000,
+    priceCents: 139900,
+    savingsCents: 38900,
     tag: "MOST POPULAR",
   },
 ];
