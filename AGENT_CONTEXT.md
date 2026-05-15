@@ -1,121 +1,101 @@
-# Checkout Prototypes — Agent Context
+# Checkout Prototypes — Agent Pickup Brief
 
-Pickup brief for agents working on UI updates and finishing the Gr4vy sandbox wiring. Written 2026-05-15.
+You are picking up work on the Wizlo checkout prototypes. Read this first. Last updated 2026-05-16.
 
 ## What this repo is
 
-Two Next.js 16 prototypes of the Wizlo checkout, rendered from a shared field schema so stakeholders can A/B between them on the same flow.
+Three live checkout variants in a Next.js 16 app, all rendered from the same shared field schema so stakeholders can A/B between them.
 
-- `/one-page` (variant A) — single long page, sticky desktop order summary, mobile summary expanded at top. Johnny's pick.
-- `/hybrid` (variant B) — accordion with edit-in-place. Dafne's pick, current default recommendation.
-- `/analytics` — in-memory funnel dashboard for prototype events.
-- `/` — landing page linking the two variants.
+| Route | Variant | Pattern |
+|---|---|---|
+| `/one-page/` | A | Single long page. Johnny's pick. |
+| `/hybrid/` | B | Accordion with edit-in-place. Dafne's pick. |
+| `/one-page-sticky/` | A with sticky-mobile-summary mockup | Same as A but compact pill follows on mobile scroll. Built for visual comparison only. |
+| `/analytics/` | | In-memory funnel dashboard. |
 
-Multi-page variant was dropped May 12.
+Multi-page variant dropped May 12.
 
-See `README.md` for product-level decisions (product pills, no insurance, shipping captured in intake, billing defaults to same-as-shipping, Affirm in payment block).
+## Where it is
 
-## Repo + deploy
+| | |
+|---|---|
+| GitHub | `dafnecaneda-wizlo/checkout-prototypes` |
+| Default branch | `main` |
+| Local + remote | In sync. `git status` clean except gitignored `tsconfig.tsbuildinfo`. |
+| Live URL | `https://zealous-stone-0536e2a0f.7.azurestaticapps.net` |
+| Deploy | Azure Static Web Apps via `.github/workflows/azure-static-web-apps.yml` on push to `main`. Next.js hybrid build, Oryx-detected. |
+| Latest commit | `b6077ad Reshape bundles to 1, 3, 6, 12 month durations` |
 
-- GitHub: `dafnecaneda-wizlo/checkout-prototypes`
-- Default branch: `main`
-- Deploy: Azure Static Web Apps, via `.github/workflows/azure-static-web-apps.yml` on push to `main`.
-- Workflow runs `npm install` then `npm run build`, then deploys the `out/` directory with `skip_app_build: true`.
-- Last green deploy: commit `1b09b6c` (May 14, 18:57 UTC).
-- Site URL: returned by the SWA deploy action, not pinned in the repo. Pull it from a recent Actions run summary or ask Dafne.
+## State right now
 
-## Current git state (read this before touching anything)
+Everything from the May 15 Johnny meeting landed. The UI is live and the local dev environment runs the real Gr4vy embed end to end (verified by headless Chromium 2026-05-15).
+
+**Working locally:** card form mounts, token mints, payment options retrieved, Google Pay session opened, zero console errors.
+
+**NOT working on the live site:** `/api/checkout-session/` returns 500 because the Gr4vy env vars are gitignored and were never added to SWA application settings. The live demo shows the visual checkout flow correctly but the Payment block will surface the "Could not start Wiz Lopee session" placeholder when a user tries to enter card details.
+
+This is the single biggest open item. Fix described in [docs/deploy.md](docs/deploy.md).
+
+## How to run locally
 
 ```
-* main (local, 1 ahead of origin/main)
-  eccd0b5 Add visual Gr4vy frame to payment block on both variants   <-- not pushed
-  1b09b6c Wire up dead user-flow handlers                            <-- origin/main HEAD
-  3acc02b ci: point app_location at out/ for skip_app_build deploy
-  70729e8 ci: add Azure Static Web Apps deploy workflow
-  dc3f7e0 Initial checkout prototypes commit
+pnpm install
+pnpm dev
 ```
 
-Unpushed commit `eccd0b5` only adds the visual mock chrome (`Gr4vyBrandedFrame`). It does **not** wire a real Gr4vy session.
+Then `http://localhost:3000`. The Gr4vy embed needs `.env.local` to exist. Creds are documented in [docs/gr4vy.md](docs/gr4vy.md). Node 20+.
 
-On top of that commit, the working tree has uncommitted changes that **do** wire the real Gr4vy SDK. Specifically:
+## Open work, in priority order
 
-Modified:
-- `app/one-page/page.tsx` — renders `<Gr4vyEmbed>` inside `Gr4vyBrandedFrame`. Filters out `paymentMethod` / `cardNumber` / `cardExpiry` / `cardCvc` from the schema field renderer so they don't double up. **Removed the "Place order" submit button**; the embed's `onComplete` callback is now the only path that calls `setPlaced`.
-- `app/hybrid/page.tsx` — same swap inside the Payment accordion. **Removed the "Review order" button** that previously advanced the accordion.
-- `next.config.ts` — `output: "export"` removed. This is what lets the new `/api/checkout-session` route compile, but it also breaks the SWA deploy (see Blockers).
-- `package.json` + `pnpm-lock.yaml` — adds `@gr4vy/embed-react@^2.36.1` and `@gr4vy/sdk@^2.0.42`.
+1. **Add Gr4vy env vars to Azure SWA Application Settings** so the live embed mounts. See [docs/deploy.md](docs/deploy.md#env-vars-on-swa).
+2. **Chase Prateek for a real sandbox Gr4vy instance.** Current setup is production-instance plus the "Test NT" merchant account plus `intent: "authorize"` as the hedge. The Gr4vy sandbox host exists at `embed.sandbox.smarteremr.gr4vy.app` but the production ES512 key is rejected there ("No valid API authentication found"). See [docs/gr4vy.md](docs/gr4vy.md#sandbox-vs-production).
+3. **Stripe and Gravy rebrand sweep.** UI strings already changed to "Wiz Lopee" in `Gr4vyBrandedFrame` and the embed-error banner. Component file names, npm package names (`@gr4vy/sdk`), and env var names (`GR4VY_PRIVATE_KEY`) intentionally untouched because those are the literal vendor name. If a future ask wants those renamed too, it is a larger refactor.
+4. **Open product questions** from `README.md`: HSA / FSA placement, intake handoff for prefilled shipping, analytics destination (GA4 vs PostHog vs internal), whether to drop `AffirmMessaging` once the Gr4vy embed surfaces Affirm itself.
 
-Untracked:
-- `app/api/checkout-session/route.ts` — Node-runtime POST handler. Calls `Gr4vy.checkoutSessions.create` with the sandbox private key, then `getEmbedToken` to mint the embed token. Returns `{ checkoutSessionId, token }`.
-- `components/checkout/Gr4vyEmbed.tsx` — client component, fetches `/api/checkout-session` once, then renders the dynamically-imported `@gr4vy/embed-react` `Embed` with `intent: "capture"`, `store: true`, `display: "all"`.
+## Document map
 
-## Blockers / things you will trip on
+| File | Purpose |
+|---|---|
+| [AGENT_CONTEXT.md](AGENT_CONTEXT.md) | This file. Pickup brief. |
+| [README.md](README.md) | Variant overview and the May 12 product decisions. |
+| [docs/gr4vy.md](docs/gr4vy.md) | Gr4vy credentials, env vars, token flow, sandbox-vs-production, how to verify end to end. |
+| [docs/deploy.md](docs/deploy.md) | Azure SWA workflow, live URL, env vars not yet on SWA, build mode. |
+| [docs/session-2026-05-15.md](docs/session-2026-05-15.md) | Log of what changed this session, the May 15 meeting context, the parallel-agent dispatch pattern used. |
 
-1. **Static export vs server API route — deploy is broken on this working tree.**
-   The SWA workflow still expects a static export in `out/`. With `output: "export"` removed from `next.config.ts`, `next build` will not generate `out/` and the deploy step will fail or upload stale content. Three reasonable fixes; the user should pick:
-   - Re-add `output: "export"` and move the Gr4vy session minting to an SWA Managed Function (`/api` Azure Function on Node), Vercel function, or an existing Wizlo backend endpoint. Then `Gr4vyEmbed` calls that absolute URL instead of `/api/checkout-session`.
-   - Switch deploy target off SWA to a Node-capable host (Azure App Service, Vercel, Cloudflare Pages with workers). This needs new infra approval.
-   - Mock the Gr4vy session in `/api/checkout-session` for the static-export deploy (sandbox-only stub) so the prototype builds without server runtime. Loses the real card-tokenization demo.
-   Do not push the current working tree as-is — it will fail the deploy job.
-
-2. **`.env.local` is gitignored.** It is present locally and is what `app/api/checkout-session/route.ts` reads. As of 2026-05-15 it points at the SmarterEMR Gr4vy **production** instance using a **test merchant account**, per creds Prateek sent when asked for "sandbox" access:
-   - `GR4VY_PRIVATE_KEY` = base64 of `gr4vy-smarteremr-production-4nOy2uem…-2GCuthlM6JObW0I.pem` (ES512 / EC P-521, validated)
-   - `GR4VY_SERVER_ID=smarteremr`
-   - `GR4VY_SERVER=production`
-   - `GR4VY_MERCHANT_ACCOUNT_ID=WD9EOEClxD_AYKpHgo7pPCCCOtOIZBIhOtfmkpaG6LI` (the "Smarterswipe Test NT" merchant)
-   - `NEXT_PUBLIC_GR4VY_ENVIRONMENT=production`
-   - `NEXT_PUBLIC_GR4VY_ID=smarteremr`
-
-   Verified working 2026-05-15: `POST /api/checkout-session/` returns 200 with a real ES512 JWT. The embed mounts.
-
-   **Production instance, test merchant — read this before clicking.** The instance is the live SmarterEMR Gr4vy environment. The merchant account is labelled "Test NT" and is intended for sandbox-style flows (test card numbers like `4111 1111 1111 1111` route to the Visa/MC test network with no settlement). But the embed in `components/checkout/Gr4vyEmbed.tsx:80-81` is still configured with `intent: "capture"` and `store: true`. If anyone enters a real card by mistake, it will be authed-and-captured against the production processor. Before doing live demos:
-   - Switch `intent` to `"auth"` while debugging, or
-   - Confirm with Prateek that the Test NT merchant cannot route to live rails regardless of card number, or
-   - Ask Prateek for a dedicated sandbox instance and key so we can flip `GR4VY_SERVER` back to `sandbox`.
-
-   Original RSA key that was in `.env.local` (and is still in `wizlo-app-latest/api/.env`) is the wrong key type. The Gr4vy SDK requires ES512 / EC P-521. The wizlo-app backend has very likely been failing every live Gr4vy call against that env. Worth flagging to whoever owns that service.
-
-3. **Schema validation is bypassed.** Both pages used `validateAll(values)` inside a submit handler. Now that the submit/advance buttons are removed and the embed drives completion via `onComplete`, the `handleSubmit` function on `one-page/page.tsx` and `handlePlace` on `hybrid/page.tsx` are unreachable for the normal path. Contact email, prefilled-shipping edits, billing-not-same-as-shipping, and any future required schema fields are no longer gated before tokenization. Decide:
-   - Keep schema validation by calling `validateAll` before mounting `<Gr4vyEmbed>` (lazy-mount pattern) — preferred for the hybrid accordion.
-   - Or move all those fields to the Gr4vy embed metadata and rely on Gr4vy for required-field gating — simpler but loses our analytics events `validation_error` and `step_complete` for those fields.
-
-4. **Affirm messaging is duplicated.** `AffirmMessaging` still renders above `Gr4vyBrandedFrame` in both pages, but Gr4vy's embed (`display: "all"`) will also surface Affirm as a payment method if it's enabled on the merchant account. Confirm with Johnny whether to keep our hand-rolled messaging block or drop it once the embed loads.
-
-5. **No state for the prefilled shipping edit-out.** README promises "Editing routes back to intake in production." Right now `PrefilledShipping.tsx` is read-only with no edit path wired. Out of scope for the Gr4vy pass but flag if you touch shipping UI.
-
-## File map (after working-tree changes)
+## File map of the app
 
 ```
 app/
   page.tsx                          landing
   layout.tsx
   globals.css
-  analytics/page.tsx                live funnel dashboard
-  one-page/page.tsx                 Variant A. Gr4vyEmbed wired in payment section.
-  hybrid/page.tsx                   Variant B. Gr4vyEmbed wired in payment accordion.
-  api/
-    checkout-session/route.ts       NEW. Server POST that mints Gr4vy embed token.
+  analytics/page.tsx                in-memory funnel dashboard
+  one-page/page.tsx                 Variant A
+  hybrid/page.tsx                   Variant B
+  one-page-sticky/page.tsx          Variant A with sticky-mobile mockup
+  api/checkout-session/route.ts     Server POST that mints Gr4vy embed token
 lib/
   schema/fields.ts                  Shared field schema + PREFILLED_SHIPPING
-  schema/cart.ts                    Sample cart (3-mo semaglutide bundle, $826.20)
-  validate.ts                       Shared validation respecting showWhen
-  analytics/{adapter,client,store}.ts   Event types + in-memory ring buffer
-  payment/adapter.ts                Mock charge (pre-Gr4vy)
+  schema/cart.ts                    Sample cart
+  validate.ts                       Shared validation, respects showWhen
+  analytics/{adapter,client,store}.ts
+  payment/adapter.ts                Mock charge (pre-Gr4vy, dead path now)
   eligibility/adapter.ts            Mock HSA/FSA stub
-  checkout-client.ts                placeMockOrder() — now only used for Express pay path
-  utils.ts                          cn(), formatMoney()
+  checkout-client.ts                placeMockOrder, unreachable since embed onComplete drives setPlaced
+  utils.ts                          cn, formatMoney
 components/
   ui/{Button,Input,Select}.tsx
   checkout/
     FieldRenderer.tsx
     OrderSummary.tsx
-    ExpressPay.tsx                  Apple / Google / Shop mock
+    StickyMobileSummary.tsx         Compact mobile pill for /one-page-sticky/
+    ExpressPay.tsx                  Wallet buttons, no longer used on either page
     AccordionSection.tsx
     SectionCard.tsx
     ProductPills.tsx
-    PlanTypeTabs.tsx                One-time vs Bundle vs Subscription tabs
+    PlanTypeTabs.tsx                Subscription / One-time / Bundle tabs
     PlanPicker.tsx                  Cards inside each tab
-    BundleCard.tsx
+    BundleCard.tsx                  Bundles are 1, 3, 6, 12 month durations
     OneTimeCard.tsx
     SubscriptionCard.tsx
     PrefilledShipping.tsx
@@ -123,50 +103,16 @@ components/
     AffirmInfoModal.tsx
     CheckoutHeader.tsx
     GuestCheckoutBanner.tsx
-    Gr4vyBrandedFrame.tsx           Visual chrome (saved-card row, PCI badge, scheme footer)
-    Gr4vyEmbed.tsx                  NEW. Real @gr4vy/embed-react integration.
+    Gr4vyBrandedFrame.tsx           Wiz-Lopee branded chrome around the embed
+    Gr4vyEmbed.tsx                  Real @gr4vy/embed-react integration
 .github/workflows/
-  azure-static-web-apps.yml         SWA deploy on push to main
-.env.local                          Sandbox creds. Not committed.
+  azure-static-web-apps.yml         Next.js hybrid deploy on push to main
+.env.local                          Gr4vy creds. Gitignored.
 ```
 
-## How to run
+## Code rules worth knowing
 
-```
-pnpm install
-pnpm dev
-```
-
-Then http://localhost:3000. `.env.local` must exist for `/api/checkout-session` to work — without it the embed renders the "Could not start Gr4vy session" red banner.
-
-Node 20+ (the SWA workflow pins 20; local works on 22).
-
-## Sample cart (anchor for amounts)
-
-`lib/schema/cart.ts` ships a fixed cart:
-- Semaglutide 3-month bundle: $765.00 (strike-through $900.00)
-- Provider consultation: $0
-- Tax: $61.20
-- **Total: $826.20** (`82620` cents)
-
-`Gr4vyEmbed` is called with `amountCents={totalCents}` from each page, which resolves to the plan-picker `offer.priceCents`. The default selection is the 3-month bundle, so the embed will load with `amount: 82620, currency: "USD"`.
-
-## Analytics events emitted
-
-`checkout_reached`, `step_view`, `step_complete`, `field_focus`, `field_blur`, `validation_error`, `order_placed`, `checkout_abandoned`. Sink is in-memory at `/api/analytics` — restart wipes it. Visible at `/analytics`. Production destination is still an open question (GA4 vs PostHog vs internal).
-
-## Open product questions (from README, still unresolved)
-
-1. HSA / FSA placement — currently tagged `telehealthStub: true` in `lib/eligibility/adapter.ts`. Awaiting Johnny on whether it lives in Payment or somewhere else.
-2. Intake handoff for prefilled shipping — placeholder; needs real intake schema and edit-out route.
-3. Analytics destination — see above.
-4. Drop or keep `AffirmMessaging` once the Gr4vy embed handles BNPL.
-
-## Suggested order of work for a pickup agent
-
-1. Decide deploy strategy for the new server route (Blocker #1) before pushing anything. Until that's decided, do not push `main`.
-2. Fix `NEXT_PUBLIC_GR4VY_ID` vs `GR4VY_SERVER_ID` mismatch (Blocker #2). Verify the embed actually mounts and a sandbox charge token can be created end-to-end.
-3. Re-introduce a validation gate before the Gr4vy embed mounts (Blocker #3), or formally drop schema validation for those fields.
-4. Audit Gr4vy event payloads (`onEvent` is wired but unused) and decide which to forward to our analytics ring buffer.
-5. Resolve duplicate Affirm messaging (Blocker #4).
-6. UI updates per Dafne/Johnny direction — confirm what's actually in scope before refactoring shared components, since both variants render from the same shared field schema.
+- `intent: "authorize"` on `Gr4vyEmbed.tsx:80`. Do not change to `"capture"` without confirming the merchant account is not on production live rails.
+- Product cards (`BundleCard`, `OneTimeCard`, `SubscriptionCard`) are `<div role="radio">` not `<button>`. The Affirm "Learn more" inside them was nested invalidly when the outer was a button and caused React hydration errors. Keep the radio pattern.
+- The mobile card layout is `flex flex-col sm:grid sm:grid-cols-[13rem_minmax(0,1fr)]`. The `minmax(0, 1fr)` is load-bearing. Drop it and the price text forces horizontal overflow on 390px viewports.
+- `Gr4vyEmbed` takes an `enabled` prop. `/one-page` and `/one-page-sticky` pass `enabled={formValid}` so the token fetch is deferred until contact email plus shipping method validate. `/hybrid` does not pass it because `AccordionSection` only renders children when state is `"open"`, so the embed only mounts when the user advances through the steps. Do not remove the gate.
